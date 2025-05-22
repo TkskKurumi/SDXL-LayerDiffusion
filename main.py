@@ -40,7 +40,9 @@ def response_err(msg, code):
     )
 def layer_from_json(layer_arg: Dict) -> Layer:
     for k, v in layer_arg.items():
-        if ((k in ["image", "mask"]) and (v is not None)):
+        if ((k == "image") and (v is not None)):
+            layer_arg[k] = get_image_by_id(v)
+        elif ((k == "mask" ) and isinstance(v, str)):
             layer_arg[k] = get_image_by_id(v)
     return Layer(**layer_arg)
 def response_img(img: Image.Image):
@@ -81,30 +83,33 @@ async def handle_post_upload_image(
 def handle_post_layer_diffusion(
     data: Dict[str, Any]
 ) -> Any:
-    
-    if ("layers" in data):
-        layer_args = data["layers"]
-    else:
-        return response_err("layers is required", status_codes.HTTP_400_BAD_REQUEST)
-    layers = []
-    for layer_arg in layer_args:
-        layers.append(layer_from_json(layer_arg))
-    
-    ldr_args = {}
-    ldr_args.update(data)
-    ldr_args["layers"] = layers
-    for k, v in ldr_args.items():
-        if ((k in ["noise"] ) and (v is not None)):
-            ldr_args[k] = get_image_by_id(v)
+    try:
+        if ("layers" in data):
+            layer_args = data["layers"]
+        else:
+            return response_err("layers is required", status_codes.HTTP_400_BAD_REQUEST)
+        layers = []
+        for layer_arg in layer_args:
+            layers.append(layer_from_json(layer_arg))
+        
+        ldr_args = {}
+        ldr_args.update(data)
+        ldr_args["layers"] = layers
+        for k, v in ldr_args.items():
+            if ((k in ["noise"] ) and (v is not None)):
+                ldr_args[k] = get_image_by_id(v)
 
-    
-    ldr = LayerDiffusionRun(goc_base(), **ldr_args)
-    task = THREAD_POOL.submit(ldr.run)
-    image_id = save_image(task)
-    return Response(
-        {"image_id": image_id},
-        status_code=status_codes.HTTP_201_CREATED
-    )
+        
+        ldr = LayerDiffusionRun(goc_base(), **ldr_args)
+        task = THREAD_POOL.submit(ldr.run)
+        image_id = save_image(task)
+        return Response(
+            {"image_id": image_id},
+            status_code=status_codes.HTTP_201_CREATED
+        )
+    except Exception as e:
+        traceback.print_exc()
+        return response_err(str(e), 500)
 
 @get(path="/image", sync_to_thread=True)
 def handle_get_image(image_id: str) -> Any:

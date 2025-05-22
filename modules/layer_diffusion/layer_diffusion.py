@@ -102,7 +102,7 @@ class Layer:
             alpha_mask_t = torch.from_numpy(alpha_mask_n).to(device=latents.device, dtype=latents.dtype)
             ret = alpha_mask_t
         elif (self.mask is None):
-            ret = torch.ones_like(latents)
+            ret = torch.ones((h, w), device=latents.device, dtype=latents.dtype)
         else:
             alpha_mask_n = np.ones((h, w), np.float32)*self.mask
             alpha_mask_t = torch.from_numpy(alpha_mask_n).to(device=latents.device, dtype=latents.dtype)
