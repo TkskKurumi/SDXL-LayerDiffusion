@@ -1,0 +1,6 @@
+device: "cuda:0"
+model: "D:/StableDiffusion/BaseModels/XL/tPonynai3_v55.safetensors"
+area: 921600
+lora_dir: 'D:\StableDiffusion\XLAPI\V0\files\lora'
+port: 8001
+host: '0.0.0.0'
